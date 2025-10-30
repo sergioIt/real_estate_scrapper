@@ -6,6 +6,8 @@ type Property struct {
 	Title        string  // e.g. "3 room Flat For Sale"
 	Price        string  // Total price in USD
 	PriceNumeric float64 // Numeric price for sorting/filtering
+	PricePerSqm  string  // Price per square meter
+	FullPrice    string  // Full total price (in thousands, e.g. "1,579 $")
 	Location     string  // City area/district
 	SquareMeters int     // Property size in m²
 	URL          string

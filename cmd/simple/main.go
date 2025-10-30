@@ -37,7 +37,8 @@ func main() {
 
 	for i, prop := range properties {
 		fmt.Printf("%d. %s\n", i+1, prop.Title)
-		fmt.Printf("   Price: %s\n", prop.Price)
+		fmt.Printf("   Price per m²: %s\n", prop.PricePerSqm)
+		fmt.Printf("   Full Price: %s\n", prop.FullPrice)
 		fmt.Printf("   Location: %s\n", prop.Location)
 		if prop.SquareMeters > 0 {
 			fmt.Printf("   Size: %d m²\n", prop.SquareMeters)

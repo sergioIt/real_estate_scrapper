@@ -68,7 +68,7 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 		// Parse the text - pattern: "97,300 $m² - 1,160 $3 room Flat For Sale. Ortachala"
 		// We need: total price (1,160 $), title (3 room Flat For Sale), location (Ortachala), sqm
 
-		var title, location, price string
+		var title, location, price, pricePerSqm, fullPrice string
 		var sqm int
 
 		// Split text into lines
@@ -80,8 +80,22 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 			}
 
 			// Look for the main info line with price and title
-			// Pattern: "NUMBER $m² - NUMBER $ TITLE. LOCATION" or "NUMBER ₾m² - NUMBER ₾ TITLE. LOCATION"
+			// Pattern: "FULL_PRICE $m² - PRICE_PER_SQM $ TITLE. LOCATION"
+			// Example: "77,000 $m² - 1,674 $2 room Flat For Sale. Batumi"
 			if strings.Contains(line, "m²") && strings.Contains(line, "room") {
+				// Extract full price (first number before m²)
+				// Pattern: "77,000 $m²" or "68,000 ₾m²"
+				reFullPriceDollar := regexp.MustCompile(`([\d,]+)\s*\$m²`)
+				reFullPriceLari := regexp.MustCompile(`([\d,]+)\s*₾m²`)
+
+				if match := reFullPriceDollar.FindStringSubmatch(line); len(match) > 1 {
+					fullPrice = match[1] + " $"
+					price = fullPrice // Keep price for backward compatibility
+				} else if match := reFullPriceLari.FindStringSubmatch(line); len(match) > 1 {
+					fullPrice = match[1] + " ₾"
+					price = fullPrice
+				}
+
 				// Extract square meters - it's usually at the end like "83.9 m²" or "60 m²"
 				// Look for the LAST occurrence of number + m²
 				reM2 := regexp.MustCompile(`(\d+(?:\.\d+)?)\s*m²`)
@@ -95,21 +109,21 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 					}
 				}
 
-				// Extract total price (second occurrence after m²)
+				// Extract price per m² and title (after the m² - dash part)
 				// Split by m² to get the part after
 				parts := strings.Split(line, "m²")
 				if len(parts) > 1 {
 					afterM2 := parts[1]
 
-					// Find price with $ or ₾
-					// Match pattern like "- 1,160 $" or "- 97,300 ₾"
+					// Find price per m² with $ or ₾
+					// Match pattern like "- 1,674 $" or "- 97,300 ₾"
 					reDollar := regexp.MustCompile(`-\s*([\d,]+)\s*\$`)
 					reLari := regexp.MustCompile(`-\s*([\d,]+)\s*₾`)
 
 					if match := reDollar.FindStringSubmatch(afterM2); len(match) > 1 {
-						price = match[1] + " $"
+						pricePerSqm = match[1] + " $/m²"
 					} else if match := reLari.FindStringSubmatch(afterM2); len(match) > 1 {
-						price = match[1] + " ₾"
+						pricePerSqm = match[1] + " ₾/m²"
 					}
 
 					// Extract title - pattern like "3 room Flat For Sale. Location"
@@ -142,6 +156,8 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 				ID:           generatePropertyID(title, price, location),
 				Title:        title,
 				Price:        price,
+				PricePerSqm:  pricePerSqm,
+				FullPrice:    fullPrice,
 				Location:     location,
 				SquareMeters: sqm,
 				URL:          url,
