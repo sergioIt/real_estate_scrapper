@@ -1,12 +1,20 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"web_parser/pkg/scraper"
 )
 
 func main() {
+	n := flag.Int("n", 10, "number of records to fetch")
+	flag.Parse()
+
+	if *n <= 0 {
+		log.Fatal("n must be a positive number")
+	}
+
 	// Create scraper instance
 	s := scraper.NewSSGEScraper()
 
@@ -16,6 +24,7 @@ func main() {
 		PriceTo:      0, // No maximum price
 		Type:         "For sale",
 		PropertyType: "Flat",
+		Limit:        *n,
 	}
 
 	log.Println("Starting scrape from home.ss.ge...")
@@ -24,12 +33,6 @@ func main() {
 	properties, err := s.Scrape(filters)
 	if err != nil {
 		log.Fatalf("Failed to scrape: %v", err)
-	}
-
-	// Limit to 10 records
-	maxRecords := 10
-	if len(properties) > maxRecords {
-		properties = properties[:maxRecords]
 	}
 
 	// Output results to stdout

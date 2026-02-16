@@ -187,6 +187,15 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 		return nil, fmt.Errorf("failed to scrape ss.ge: %w", err)
 	}
 
+	// Apply limit
+	limit := filters.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+	if len(properties) > limit {
+		properties = properties[:limit]
+	}
+
 	return properties, nil
 }
 

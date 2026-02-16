@@ -24,6 +24,7 @@ type FilterParams struct {
 	PropertyType string // Apartment, House, etc.
 	City         string
 	District     string
+	Limit        int // Max number of results to return (0 = default 10)
 }
 
 // RealEstateScraper defines the interface for real estate website scrapers
