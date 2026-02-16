@@ -27,6 +27,8 @@ type FilterParams struct {
 	District     string
 	PricePerSqmFrom int // Min price per m² in USD (0 = no bound)
 	PricePerSqmTo   int // Max price per m² in USD (0 = no bound)
+	AreaFrom        int // Min area in m² (0 = no bound)
+	AreaTo          int // Max area in m² (0 = no bound)
 	Limit           int // Max number of results to return (0 = default 10)
 }
 

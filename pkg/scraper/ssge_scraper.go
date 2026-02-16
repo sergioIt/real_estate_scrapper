@@ -256,6 +256,13 @@ func (s *SSGEScraper) constructURL(filters FilterParams) string {
 		params = append(params, "cityIdList="+cityID)
 	}
 
+	if filters.AreaFrom > 0 {
+		params = append(params, fmt.Sprintf("areaFrom=%d", filters.AreaFrom))
+	}
+	if filters.AreaTo > 0 {
+		params = append(params, fmt.Sprintf("areaTo=%d", filters.AreaTo))
+	}
+
 	if len(params) > 0 {
 		url += "?" + strings.Join(params, "&")
 	}
