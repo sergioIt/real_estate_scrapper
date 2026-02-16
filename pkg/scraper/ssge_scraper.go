@@ -70,6 +70,7 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 
 		var title, location, price, pricePerSqm, fullPrice string
 		var sqm int
+		var pricePerSqmNumeric float64
 
 		// Split text into lines
 		lines := strings.Split(text, "\n")
@@ -122,6 +123,8 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 
 					if match := reDollar.FindStringSubmatch(afterM2); len(match) > 1 {
 						pricePerSqm = match[1] + " $/m²"
+						numStr := strings.ReplaceAll(match[1], ",", "")
+						pricePerSqmNumeric, _ = strconv.ParseFloat(numStr, 64)
 					} else if match := reLari.FindStringSubmatch(afterM2); len(match) > 1 {
 						pricePerSqm = match[1] + " ₾/m²"
 					}
@@ -153,15 +156,16 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 			seenURLs[url] = true
 
 			property := Property{
-				ID:           generatePropertyID(title, price, location),
-				Title:        title,
-				Price:        price,
-				PricePerSqm:  pricePerSqm,
-				FullPrice:    fullPrice,
-				Location:     location,
-				SquareMeters: sqm,
-				URL:          url,
-				ListingType:  filters.Type,
+				ID:                 generatePropertyID(title, price, location),
+				Title:              title,
+				Price:              price,
+				PricePerSqm:        pricePerSqm,
+				PricePerSqmNumeric: pricePerSqmNumeric,
+				FullPrice:          fullPrice,
+				Location:           location,
+				SquareMeters:       sqm,
+				URL:                url,
+				ListingType:        filters.Type,
 			}
 
 			properties = append(properties, property)
@@ -222,22 +226,31 @@ func (s *SSGEScraper) constructURL(filters FilterParams) string {
 	url := baseURL + propertyType + "/" + listingType
 
 	// Add query parameters
-	query := ""
+	params := []string{}
 
-	if filters.PriceFrom > 0 {
-		query += fmt.Sprintf("?priceFrom=%d", filters.PriceFrom)
-	}
-
-	if filters.PriceTo > 0 {
-		if query == "" {
-			query += "?"
-		} else {
-			query += "&"
+	if filters.PricePerSqmFrom > 0 || filters.PricePerSqmTo > 0 {
+		// priceType=2 means "per m²", currencyId=2 means USD
+		params = append(params, "currencyId=2", "priceType=2")
+		if filters.PricePerSqmFrom > 0 {
+			params = append(params, fmt.Sprintf("priceFrom=%d", filters.PricePerSqmFrom))
 		}
-		query += fmt.Sprintf("priceTo=%d", filters.PriceTo)
+		if filters.PricePerSqmTo > 0 {
+			params = append(params, fmt.Sprintf("priceTo=%d", filters.PricePerSqmTo))
+		}
+	} else {
+		if filters.PriceFrom > 0 {
+			params = append(params, fmt.Sprintf("priceFrom=%d", filters.PriceFrom))
+		}
+		if filters.PriceTo > 0 {
+			params = append(params, fmt.Sprintf("priceTo=%d", filters.PriceTo))
+		}
 	}
 
-	return url + query
+	if len(params) > 0 {
+		url += "?" + strings.Join(params, "&")
+	}
+
+	return url
 }
 
 // generatePropertyID creates a unique hash for duplicate detection

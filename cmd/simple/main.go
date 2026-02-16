@@ -9,6 +9,8 @@ import (
 
 func main() {
 	n := flag.Int("n", 10, "number of records to fetch")
+	priceFrom := flag.Int("sqm-from", 0, "min price per m² in USD (0 = no limit)")
+	priceTo := flag.Int("sqm-to", 0, "max price per m² in USD (0 = no limit)")
 	flag.Parse()
 
 	if *n <= 0 {
@@ -20,11 +22,13 @@ func main() {
 
 	// Set up default filters to get flats for sale
 	filters := scraper.FilterParams{
-		PriceFrom:    0, // No minimum price
-		PriceTo:      0, // No maximum price
-		Type:         "For sale",
-		PropertyType: "Flat",
-		Limit:        *n,
+		PriceFrom:       0, // No minimum price
+		PriceTo:         0, // No maximum price
+		PricePerSqmFrom: *priceFrom,
+		PricePerSqmTo:   *priceTo,
+		Type:            "For sale",
+		PropertyType:    "Flat",
+		Limit:           *n,
 	}
 
 	log.Println("Starting scrape from home.ss.ge...")

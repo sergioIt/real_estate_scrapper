@@ -9,6 +9,6 @@ ss.ge web parser requirements separated by stages
 
 ### stage2: adding filtering params
 
-
+1. include filter by price per sq.meters (in dollars) 
 
 ### stage? telegram bot integration

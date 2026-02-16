@@ -6,7 +6,8 @@ type Property struct {
 	Title        string  // e.g. "3 room Flat For Sale"
 	Price        string  // Total price in USD
 	PriceNumeric float64 // Numeric price for sorting/filtering
-	PricePerSqm  string  // Price per square meter
+	PricePerSqm        string  // Price per square meter
+	PricePerSqmNumeric float64 // Numeric price per m² (USD only)
 	FullPrice    string  // Full total price (in thousands, e.g. "1,579 $")
 	Location     string  // City area/district
 	SquareMeters int     // Property size in m²
@@ -24,7 +25,9 @@ type FilterParams struct {
 	PropertyType string // Apartment, House, etc.
 	City         string
 	District     string
-	Limit        int // Max number of results to return (0 = default 10)
+	PricePerSqmFrom int // Min price per m² in USD (0 = no bound)
+	PricePerSqmTo   int // Max price per m² in USD (0 = no bound)
+	Limit           int // Max number of results to return (0 = default 10)
 }
 
 // RealEstateScraper defines the interface for real estate website scrapers
