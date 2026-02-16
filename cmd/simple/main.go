@@ -11,6 +11,7 @@ func main() {
 	n := flag.Int("n", 10, "number of records to fetch")
 	priceFrom := flag.Int("sqm-from", 0, "min price per m² in USD (0 = no limit)")
 	priceTo := flag.Int("sqm-to", 0, "max price per m² in USD (0 = no limit)")
+	city := flag.String("city", "Tbilisi", "city to search in (Tbilisi, Batumi)")
 	flag.Parse()
 
 	if *n <= 0 {
@@ -26,6 +27,7 @@ func main() {
 		PriceTo:         0, // No maximum price
 		PricePerSqmFrom: *priceFrom,
 		PricePerSqmTo:   *priceTo,
+		City:            *city,
 		Type:            "For sale",
 		PropertyType:    "Flat",
 		Limit:           *n,

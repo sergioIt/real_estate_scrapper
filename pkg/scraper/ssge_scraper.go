@@ -203,6 +203,12 @@ func (s *SSGEScraper) Scrape(filters FilterParams) ([]Property, error) {
 	return properties, nil
 }
 
+// cityIDs maps city names to ss.ge city IDs
+var cityIDs = map[string]string{
+	"Tbilisi": "95",
+	"Batumi":  "96",
+}
+
 // constructURL builds the URL with the filter parameters
 func (s *SSGEScraper) constructURL(filters FilterParams) string {
 	// Base URL for home.ss.ge with English locale
@@ -244,6 +250,10 @@ func (s *SSGEScraper) constructURL(filters FilterParams) string {
 		if filters.PriceTo > 0 {
 			params = append(params, fmt.Sprintf("priceTo=%d", filters.PriceTo))
 		}
+	}
+
+	if cityID, ok := cityIDs[filters.City]; ok {
+		params = append(params, "cityIdList="+cityID)
 	}
 
 	if len(params) > 0 {
