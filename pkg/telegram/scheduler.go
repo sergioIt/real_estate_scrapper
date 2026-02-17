@@ -9,6 +9,10 @@ import (
 // StartScheduler launches a background goroutine that periodically checks
 // for new listings and sends them to the saved chat ID.
 func (b *Bot) StartScheduler(interval time.Duration) {
+	b.mu.Lock()
+	b.checkInterval = interval
+	b.mu.Unlock()
+
 	go func() {
 		log.Printf("Scheduler started, interval: %s", interval)
 
@@ -35,6 +39,10 @@ func (b *Bot) scheduledCheck() {
 	}
 
 	log.Println("Running scheduled check for new listings...")
+
+	b.mu.Lock()
+	b.lastCheck = time.Now()
+	b.mu.Unlock()
 
 	newProps := b.checkNewListings()
 

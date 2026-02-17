@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 	"web_parser/pkg/scraper"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -22,11 +23,13 @@ type UserConfig struct {
 }
 
 type Bot struct {
-	api        *tgbotapi.BotAPI
-	scraper    scraper.RealEstateScraper
-	config     UserConfig
-	configPath string
-	mu         sync.Mutex
+	api           *tgbotapi.BotAPI
+	scraper       scraper.RealEstateScraper
+	config        UserConfig
+	configPath    string
+	checkInterval time.Duration
+	lastCheck     time.Time
+	mu            sync.Mutex
 }
 
 // NewBot creates a new Telegram bot instance.
@@ -101,6 +104,8 @@ func (b *Bot) handleCommand(message *tgbotapi.Message) {
 		b.handleFilters(chatID)
 	case "check":
 		b.handleCheck(chatID)
+	case "status":
+		b.handleStatus(chatID)
 	case "help":
 		b.handleHelp(chatID)
 	default:
@@ -123,6 +128,7 @@ Available commands:
 /setarea - Set area range (e.g. /setarea 40 80)
 /filters - Show current filters
 /check - Check for new listings now
+/status - Show bot status and schedule
 /help - Show this help message`
 
 	b.sendMessage(chatID, text)
@@ -263,6 +269,45 @@ func (b *Bot) handleCheck(chatID int64) {
 	b.sendMessage(chatID, text)
 }
 
+func (b *Bot) handleStatus(chatID int64) {
+	b.mu.Lock()
+	f := b.config.Filters
+	seenCount := len(b.config.SeenIDs)
+	lastCheck := b.lastCheck
+	interval := b.checkInterval
+	b.mu.Unlock()
+
+	var lines []string
+	lines = append(lines, "*Bot Status:*")
+	lines = append(lines, fmt.Sprintf("Notifications: active"))
+	lines = append(lines, fmt.Sprintf("Check interval: %s", interval))
+
+	if lastCheck.IsZero() {
+		lines = append(lines, "Last check: not yet")
+	} else {
+		ago := time.Since(lastCheck).Truncate(time.Second)
+		lines = append(lines, fmt.Sprintf("Last check: %s ago", ago))
+	}
+
+	lines = append(lines, fmt.Sprintf("Seen properties: %d", seenCount))
+	lines = append(lines, "")
+	lines = append(lines, fmt.Sprintf("City: %s", f.City))
+
+	if f.PricePerSqmFrom > 0 || f.PricePerSqmTo > 0 {
+		lines = append(lines, fmt.Sprintf("Price per m²: %d–%d $", f.PricePerSqmFrom, f.PricePerSqmTo))
+	} else {
+		lines = append(lines, "Price per m²: not set")
+	}
+
+	if f.AreaFrom > 0 || f.AreaTo > 0 {
+		lines = append(lines, fmt.Sprintf("Area: %d–%d m²", f.AreaFrom, f.AreaTo))
+	} else {
+		lines = append(lines, "Area: not set")
+	}
+
+	b.sendMessage(chatID, strings.Join(lines, "\n"))
+}
+
 func (b *Bot) handleHelp(chatID int64) {
 	text := `*Home.ss.ge Property Bot Help*
 
@@ -275,6 +320,7 @@ func (b *Bot) handleHelp(chatID int64) {
 /setarea MIN MAX - Set area range
 /filters - Show current filters
 /check - Check for new listings
+/status - Show bot status and schedule
 /help - Show this help message
 
 Properties are scraped from home.ss.ge in real-time.`
